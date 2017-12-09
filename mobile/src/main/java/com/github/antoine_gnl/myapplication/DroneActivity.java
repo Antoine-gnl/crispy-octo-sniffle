@@ -3,6 +3,7 @@ package com.github.antoine_gnl.myapplication;
 import android.content.Context;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.widget.ProgressBar;
@@ -12,8 +13,11 @@ import android.widget.Toast;
 import com.github.antoine_gnl.myapplication.SensorTagAdapter.SensorTagAdapterOnClickHandler;
 import com.github.antoine_gnl.myapplication.WatchAdapter.WatchAdapterOnClickHandler;
 
-public class DroneActivity extends AppCompatActivity implements SensorTagAdapterOnClickHandler, WatchAdapterOnClickHandler {
+import java.util.ArrayList;
+import java.util.List;
 
+public class DroneActivity extends AppCompatActivity implements SensorTagAdapterOnClickHandler, WatchAdapterOnClickHandler {
+    private List<String> fakeSensorValues = new ArrayList<String>();
     private SensorTagAdapter mSensorTagAdapter;
     private WatchAdapter mWatchAdapter;
 
@@ -22,6 +26,21 @@ public class DroneActivity extends AppCompatActivity implements SensorTagAdapter
 
     private TextView mErrorMessageDisplay;
     private ProgressBar mLoadingIndicator;
+
+    void createFakeData() {
+        for (int i = 100; i >0; i--)
+        {
+            fakeSensorValues.add(0,String.valueOf(i));
+        }
+        fakeSensorValues.add(0,"SensorTag");
+        String[] simple = new String[fakeSensorValues.size()];
+        fakeSensorValues.toArray(simple);
+        mSensorTagAdapter.setSensorTagData(simple);
+        String[] simple2 = new String[fakeSensorValues.size()];
+        fakeSensorValues.set(0,"Watch");
+        fakeSensorValues.toArray(simple2);
+        mWatchAdapter.setmWatchData(simple2);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,10 +52,10 @@ public class DroneActivity extends AppCompatActivity implements SensorTagAdapter
         mErrorMessageDisplay = findViewById(R.id.tv_error_message_display);
         mLoadingIndicator = findViewById(R.id.pb_loading_indicator);
 
-        LinearLayoutManager layoutManager
-                = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         LinearLayoutManager layoutManager2
                 = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+        GridLayoutManager layoutManager
+                = new GridLayoutManager(this,1, GridLayoutManager.VERTICAL,false);
 
         mRecyclerViewSensorTag.setLayoutManager(layoutManager);
         mRecyclerViewWatch.setLayoutManager(layoutManager2);
@@ -58,6 +77,8 @@ public class DroneActivity extends AppCompatActivity implements SensorTagAdapter
         /* Setting the adapter attaches it to the RecyclerView in our layout. */
         mRecyclerViewSensorTag.setAdapter(mSensorTagAdapter);
         mRecyclerViewWatch.setAdapter(mWatchAdapter);
+        createFakeData();
+
     }
 
     @Override

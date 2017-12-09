@@ -11,13 +11,17 @@
             android:id="@+id/recyclerview_sensorTag"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_weight="1"/>
+            android:layout_weight="1"
+            android:scrollbars="vertical"
+            />
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/recyclerview_watch"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_weight="1"/>
+            android:layout_weight="1"
+            android:scrollbars="vertical"
+            />
 
     </LinearLayout>
 
