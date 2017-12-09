@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Human Drone Control</string>
+    <string name="error_message">An error occurred, please try again later</string>
+</resources>
