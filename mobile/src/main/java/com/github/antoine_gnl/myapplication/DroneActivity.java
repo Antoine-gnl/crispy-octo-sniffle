@@ -9,12 +9,13 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-//import com.example.android.sunshine.ForecastAdapter.ForecastAdapterOnClickHandler;
 import com.github.antoine_gnl.myapplication.SensorTagAdapter.SensorTagAdapterOnClickHandler;
+import com.github.antoine_gnl.myapplication.WatchAdapter.WatchAdapterOnClickHandler;
 
-public class DroneActivity extends AppCompatActivity implements SensorTagAdapterOnClickHandler {
+public class DroneActivity extends AppCompatActivity implements SensorTagAdapterOnClickHandler, WatchAdapterOnClickHandler {
 
     private SensorTagAdapter mSensorTagAdapter;
+    private WatchAdapter mWatchAdapter;
 
     private RecyclerView mRecyclerViewSensorTag;
     private RecyclerView mRecyclerViewWatch;
@@ -34,14 +35,17 @@ public class DroneActivity extends AppCompatActivity implements SensorTagAdapter
 
         LinearLayoutManager layoutManager
                 = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+        LinearLayoutManager layoutManager2
+                = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
 
         mRecyclerViewSensorTag.setLayoutManager(layoutManager);
-
+        mRecyclerViewWatch.setLayoutManager(layoutManager2);
         /*
          * Use this setting to improve performance if you know that changes in content do not
          * change the child layout size in the RecyclerView
          */
         mRecyclerViewSensorTag.setHasFixedSize(true);
+        mRecyclerViewWatch.setHasFixedSize(true);
 
         // COMPLETED (11) Pass in 'this' as the ForecastAdapterOnClickHandler
         /*
@@ -49,9 +53,11 @@ public class DroneActivity extends AppCompatActivity implements SensorTagAdapter
          * will end up displaying our weather data.
          */
         mSensorTagAdapter = new SensorTagAdapter(this);
+        mWatchAdapter = new WatchAdapter(this);
 
         /* Setting the adapter attaches it to the RecyclerView in our layout. */
         mRecyclerViewSensorTag.setAdapter(mSensorTagAdapter);
+        mRecyclerViewWatch.setAdapter(mWatchAdapter);
     }
 
     @Override
