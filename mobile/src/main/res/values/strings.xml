@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">Human Drone Control</string>
     <string name="error_message">An error occurred, please try again later</string>
+    <string name="ble_not_supported">BLE is not supported on your device</string>
+    <string name="error_bluetooth_not_supported">Bluetooth is not supported on the device</string>
 </resources>
