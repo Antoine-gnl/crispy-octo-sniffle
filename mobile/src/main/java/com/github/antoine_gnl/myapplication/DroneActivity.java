@@ -35,9 +35,9 @@ public class DroneActivity extends AppCompatActivity implements SensorTagAdapter
     private ProgressBar mLoadingIndicator;
 
     private BluetoothAdapter mBluetoothAdapter;
-    private boolean mScanning;
     private Handler mHandler;
     private ArrayList<BluetoothDevice> mLeDevices;
+    private boolean mScanning;
 
     private static final int REQUEST_ENABLE_BT = 1;
     private static final long SCAN_PERIOD = 10000;
@@ -169,7 +169,7 @@ public class DroneActivity extends AppCompatActivity implements SensorTagAdapter
                     else
                     if(device.getAddress().equals("24:71:89:58:DA:80")) {
                         //final Intent intent = new Intent(getApplicationContext(), testConnection.class);
-                        //intent.putExtra(testConnection.EXTRAS_DEVICE_NAME, device.getName());
+                        //intent.putExtra(testConnection.EXTRAS_DEVICE_NAME, device.getName());œ
                         //intent.putExtra(testConnection.EXTRAS_DEVICE_ADDRESS, device.getAddress());
                         if (mScanning) {
                             mBluetoothAdapter.stopLeScan(mLeScanCallback);
@@ -180,6 +180,7 @@ public class DroneActivity extends AppCompatActivity implements SensorTagAdapter
                     }
                 }
             };
+
     private void scanLeDevice(final boolean enable) {
         if (enable) {
             // Stops scanning after a pre-defined scan period.
