@@ -3,4 +3,10 @@
     <string name="error_message">An error occurred, please try again later</string>
     <string name="ble_not_supported">BLE is not supported on your device</string>
     <string name="error_bluetooth_not_supported">Bluetooth is not supported on the device</string>
+    <string name="title_activity_test_connection">testConnection</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
 </resources>

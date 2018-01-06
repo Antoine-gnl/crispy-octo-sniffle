@@ -2,6 +2,7 @@ package com.github.antoine_gnl.myapplication;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
@@ -36,8 +37,10 @@ public class DroneActivity extends AppCompatActivity implements SensorTagAdapter
     private BluetoothAdapter mBluetoothAdapter;
     private boolean mScanning;
     private Handler mHandler;
+    private ArrayList<BluetoothDevice> mLeDevices;
 
     private static final int REQUEST_ENABLE_BT = 1;
+    private static final long SCAN_PERIOD = 10000;
 
     void createFakeData() {
         for (int i = 100; i >0; i--)
@@ -108,12 +111,12 @@ public class DroneActivity extends AppCompatActivity implements SensorTagAdapter
 
         // Checks if Bluetooth is supported on the device.
         if (mBluetoothAdapter == null) {
-            Log.i(BluetoothLeService.class.getSimpleName(),"J'ai pas de dents bleues");
+            Log.i(BluetoothLeService.class.getSimpleName(), "J'ai pas de dents bleues");
             Toast.makeText(this, R.string.error_bluetooth_not_supported, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
-
+        mLeDevices = new ArrayList<BluetoothDevice>();
         createFakeData();
     }
 
@@ -133,4 +136,74 @@ public class DroneActivity extends AppCompatActivity implements SensorTagAdapter
         Toast.makeText(context, weatherForDay, Toast.LENGTH_SHORT)
                 .show();
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Ensures Bluetooth is enabled on the device.  If Bluetooth is not currently enabled,
+        // fire an intent to display a dialog asking the user to grant permission to enable it.
+        if (!mBluetoothAdapter.isEnabled()) {
+            if (!mBluetoothAdapter.isEnabled()) {
+                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            }
+        }
+        mLeDevices.clear();
+        // Initializes list view adapter.
+        scanLeDevice(true);
+    }
+    // Device scan callback.
+    private BluetoothAdapter.LeScanCallback mLeScanCallback =
+            new BluetoothAdapter.LeScanCallback() {
+
+                @Override
+                public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mLeDevices.add(device);
+                        }
+                    });
+                    if (device == null) return;
+                    else
+                    if(device.getAddress().equals("24:71:89:58:DA:80")) {
+                        //final Intent intent = new Intent(getApplicationContext(), testConnection.class);
+                        //intent.putExtra(testConnection.EXTRAS_DEVICE_NAME, device.getName());
+                        //intent.putExtra(testConnection.EXTRAS_DEVICE_ADDRESS, device.getAddress());
+                        if (mScanning) {
+                            mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                            mScanning = false;
+                        }
+                        Toast.makeText(getApplicationContext(),"Connected succesfully to "+ device.getName(),Toast.LENGTH_SHORT).show();
+                        //startActivity(intent);
+                    }
+                }
+            };
+    private void scanLeDevice(final boolean enable) {
+        if (enable) {
+            // Stops scanning after a pre-defined scan period.
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    mScanning = false;
+                    mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                    invalidateOptionsMenu();
+                }
+            }, SCAN_PERIOD);
+            mScanning = true;
+            mBluetoothAdapter.startLeScan(mLeScanCallback);
+        } else {
+            mScanning = false;
+            mBluetoothAdapter.stopLeScan(mLeScanCallback);
+        }
+        invalidateOptionsMenu();
+    }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        scanLeDevice(false);
+        mLeDevices.clear();
+    }
+
 }

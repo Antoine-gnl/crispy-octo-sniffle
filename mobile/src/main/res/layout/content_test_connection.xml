@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="com.github.antoine_gnl.myapplication.testConnection"
+    tools:showIn="@layout/app_bar_test_connection">
+
+    <Button
+        android:id="@+id/bt_BLE_connect"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:padding="16dp"
+        android:text="BLE connection"
+        android:visibility="visible"
+        android:layout_weight="1"
+        />
+
+    <TextView
+        android:id="@+id/tv_BLE_state"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textAlignment="center"
+        android:textSize="20sp"
+        android:text="Not Connected"
+        android:padding="16dp"
+        android:visibility="visible"
+        android:layout_weight="1"
+        />
+
+    <Button
+        android:id="@+id/bt_drone_connect"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:padding="16dp"
+        android:text="Drone connection"
+        android:visibility="visible"
+        android:layout_weight="1"
+        />
+
+    <TextView
+        android:id="@+id/tv_drone_state"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:textAlignment="center"
+        android:gravity="center"
+        android:text="Not Connected"
+        android:padding="16dp"
+        android:visibility="visible"
+        android:layout_weight="1"
+        />
+</LinearLayout>
