@@ -4,13 +4,20 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -26,58 +33,58 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.parrot.arsdk.ARSDK;
+import com.parrot.arsdk.ardiscovery.ARDiscoveryDevice;
+import com.parrot.arsdk.ardiscovery.ARDiscoveryDeviceService;
+import com.parrot.arsdk.ardiscovery.ARDiscoveryException;
+import com.parrot.arsdk.ardiscovery.ARDiscoveryService;
+import com.parrot.arsdk.ardiscovery.receivers.ARDiscoveryServicesDevicesListUpdatedReceiver;
+import com.parrot.arsdk.ardiscovery.receivers.ARDiscoveryServicesDevicesListUpdatedReceiverDelegate;
+
 import java.util.ArrayList;
+import java.util.List;
 
 public class testConnection extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
+    static{
+        ARSDK.loadSDKLibs();
+    }
+
+
     private static final int REQUEST_ENABLE_BT = 1;
     private static final long SCAN_PERIOD = 10000;
 
+    private BluetoothHelper mBluetoothHelper;
     private Handler mHandler;
     private BluetoothAdapter mBluetoothAdapter;
     private ArrayList<BluetoothDevice> mLeDevices;
     private boolean mScanning;
-
+    private DrawerLayout mDrawerLayout;
+    private ActionBarDrawerToggle mActionBarDrawerToggle;
+    private Toolbar mToolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test_connection);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Context context= getApplicationContext();
-                Intent intent = new Intent(context,DroneActivity.class);
-                startActivity(intent);
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-        mLeDevices = new ArrayList<BluetoothDevice>();
+        /* Layout Setup */
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(mToolbar);
 
-        Button btnBLE = findViewById(R.id.bt_BLE_connect);
-        btnBLE.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                scanLeDevice(true);
-            }
-        });
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.addDrawerListener(toggle);
-        toggle.syncState();
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mActionBarDrawerToggle = new ActionBarDrawerToggle(
+                this, mDrawerLayout, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        mDrawerLayout.addDrawerListener(mActionBarDrawerToggle);
+        mActionBarDrawerToggle.syncState();
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
         /* Bluetooth Declaration */
+        mLeDevices = new ArrayList<BluetoothDevice>();
+
         setConnectionState(true);
 
         mHandler = new Handler();
@@ -104,14 +111,13 @@ public class testConnection extends AppCompatActivity
             return;
         }
 
-
     }
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
+
+        if (mDrawerLayout.isDrawerOpen(GravityCompat.START)) {
+            mDrawerLayout.closeDrawer(GravityCompat.START);
         } else {
             super.onBackPressed();
         }
@@ -166,8 +172,7 @@ public class testConnection extends AppCompatActivity
             Toast.makeText(this, "Je suis une tanche", Toast.LENGTH_SHORT).show();
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
+        mDrawerLayout.closeDrawer(GravityCompat.START);
         return true;
     }
     void setConnectionState(boolean visibility)
@@ -231,9 +236,6 @@ public class testConnection extends AppCompatActivity
                     if (device == null) return;
                     else
                     if(device.getAddress().equals("24:71:89:58:DA:80")) {
-                        //final Intent intent = new Intent(getApplicationContext(), testConnection.class);
-                        //intent.putExtra(testConnection.EXTRAS_DEVICE_NAME, device.getName());œ
-                        //intent.putExtra(testConnection.EXTRAS_DEVICE_ADDRESS, device.getAddress());
                         if (mScanning) {
                             mBluetoothAdapter.stopLeScan(mLeScanCallback);
                             mScanning = false;
@@ -243,8 +245,6 @@ public class testConnection extends AppCompatActivity
                         tv.setText(R.string.connected);
                         TextView tv2 = findViewById(R.id.tv_BLE_state);
                         tv2.setText("Scan stopped");
-
-                        //startActivity(intent);
                     }
                 }
             };
@@ -281,4 +281,24 @@ public class testConnection extends AppCompatActivity
         mLeDevices.clear();
     }
 
+    public void btnCallback(View view) {
+        switch (view.getId())
+        {
+            case R.id.bt_BLE_connect:
+                Toast.makeText(view.getContext(),"btn BLE connect pressed",Toast.LENGTH_SHORT).show();
+                break;
+            case R.id.bt_drone_connect:
+                Toast.makeText(view.getContext(),"bt drone connect pressed",Toast.LENGTH_SHORT).show();
+                break;
+            case R.id.fab:
+                Context context= getApplicationContext();
+                Intent intent = new Intent(context,DroneActivity.class);
+                startActivity(intent);
+                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+                break;
+            default:
+                break;
+        }
+    }
 }
