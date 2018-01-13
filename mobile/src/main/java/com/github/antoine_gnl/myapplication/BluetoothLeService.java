@@ -203,9 +203,8 @@ public class BluetoothLeService extends Service {
             for (int i=0; i<3; i++){
                 stringBuilder.append(String.valueOf(Acc_data[i]) + String.format(" "));
             }
+            Log.w(TAG, String.format("Received data : acc x : %f : acc y : %f : acc z :%f ", Acc_data[0],Acc_data[1],Acc_data[2]));
             intent.putExtra(EXTRA_DATA,stringBuilder.toString() + "\n");
-
-
 
         } else {
             // For all other profiles, writes the data formatted in HEX.
@@ -263,7 +262,6 @@ public class BluetoothLeService extends Service {
             Log.e(TAG, "Unable to obtain a BluetoothAdapter.");
             return false;
         }
-
         return true;
     }
 
@@ -387,7 +385,11 @@ public class BluetoothLeService extends Service {
                     BluetoothGattCharacteristic charac = characteristic;
                     charac.setValue(ENABLE_MOV);
                     Log.i(TAG,"Aller ca se tente 2");
-                    mBluetoothGatt.writeCharacteristic(charac);
+                    boolean result;
+                    do {
+                        result=mBluetoothGatt.writeCharacteristic(charac);
+                    }while(!result);
+
                 }
                 else
                     // This is specific to Keys Measurement.
@@ -396,7 +398,10 @@ public class BluetoothLeService extends Service {
                         BluetoothGattDescriptor descriptor = characteristic.getDescriptor(
                                 UUID.fromString(CLIENT_CHARACTERISTIC_CONFIG));
                         descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                        mBluetoothGatt.writeDescriptor(descriptor);
+                        boolean result;
+                        do {
+                            result = mBluetoothGatt.writeDescriptor(descriptor);
+                        }while(!result);
                     }
     }
 

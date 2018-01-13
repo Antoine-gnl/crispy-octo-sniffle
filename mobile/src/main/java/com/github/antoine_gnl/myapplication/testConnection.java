@@ -3,6 +3,9 @@ package com.github.antoine_gnl.myapplication;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -43,6 +46,7 @@ import com.parrot.arsdk.ardiscovery.receivers.ARDiscoveryServicesDevicesListUpda
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class testConnection extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -50,7 +54,6 @@ public class testConnection extends AppCompatActivity
     static{
         ARSDK.loadSDKLibs();
     }
-
 
     private static final int REQUEST_ENABLE_BT = 1;
     private static final long SCAN_PERIOD = 10000;
@@ -63,6 +66,77 @@ public class testConnection extends AppCompatActivity
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mActionBarDrawerToggle;
     private Toolbar mToolbar;
+
+    private BluetoothLeService mBluetoothLeService=null;
+    private BluetoothGattCharacteristic mNotifyCharacteristic;
+
+    private final ServiceConnection mServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            mBluetoothLeService = ((BluetoothLeService.LocalBinder) service).getService();
+            if(mBluetoothLeService.initialize()==false){
+                Toast.makeText(getApplicationContext(),"BLE Service initialization failed",Toast.LENGTH_LONG).show();
+                finish();
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            mBluetoothLeService = null;
+        }
+    };
+
+    private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)){
+                // some actions when state is connected
+            }
+            else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)){
+                // some actions when state is disconnected
+            }
+            else if(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)){
+                // some actions when state is service discovered
+                enableAccelerometer(mBluetoothLeService.getSupportedGattServices());
+                setNotification(mBluetoothLeService.getSupportedGattServices());
+            }
+            else if(BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)){
+                // some actions when state is data available
+                Toast.makeText(getApplicationContext(),"tu m'entends ?",Toast.LENGTH_SHORT).show();
+            }
+        }
+    };
+
+    private void setNotification(List<BluetoothGattService> supportedGattServices) {
+        for (BluetoothGattService gattService : supportedGattServices) {
+            UUID toto = BluetoothLeService.UUID_MOV_MEASUREMENT;
+
+            //BluetoothGattCharacteristic gattCharacteristic = gattService.getCharacteristic(toto);
+            List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics();
+            for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
+                if (gattCharacteristic.getUuid().equals(toto)) {
+                    Toast.makeText(this, "Je t'ai notifié", Toast.LENGTH_SHORT).show();
+                    mBluetoothLeService.setCharacteristicNotification(gattCharacteristic,true);
+                }
+            }
+        }
+    }
+
+    private void enableAccelerometer(List<BluetoothGattService> supportedGattServices) {
+        for (BluetoothGattService gattService : supportedGattServices) {
+            UUID toto = BluetoothLeService.UUID_MOV_CONFIGURATION;
+
+            //BluetoothGattCharacteristic gattCharacteristic = gattService.getCharacteristic(toto);
+            List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics();
+            for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
+                if (gattCharacteristic.getUuid().equals(toto)){
+                    Toast.makeText(this,"Je t'ai vu",Toast.LENGTH_SHORT).show();
+                    mBluetoothLeService.setCharacteristicNotification(gattCharacteristic,true);
+                }
+            }
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,7 +184,8 @@ public class testConnection extends AppCompatActivity
             finish();
             return;
         }
-
+        Intent gattServiceIntent = new Intent(this,BluetoothLeService.class);
+        bindService(gattServiceIntent,mServiceConnection,BIND_AUTO_CREATE);
     }
 
     @Override
@@ -219,7 +294,14 @@ public class testConnection extends AppCompatActivity
         }
         mLeDevices.clear();
         // Initializes list view adapter.
-        scanLeDevice(true);
+        if (mBluetoothLeService == null) {
+            scanLeDevice(true);
+        }
+        registerReceiver(mGattUpdateReceiver,makeGattUpdateIntentFilter());
+        if (mBluetoothLeService != null){
+            final boolean result = mBluetoothLeService.connect("24:71:89:58:DA:80");
+            Log.d(BluetoothLeService.class.getSimpleName(),"Connect request result="+result);
+        }
     }
     // Device scan callback.
     private BluetoothAdapter.LeScanCallback mLeScanCallback =
@@ -245,6 +327,7 @@ public class testConnection extends AppCompatActivity
                         tv.setText(R.string.connected);
                         TextView tv2 = findViewById(R.id.tv_BLE_state);
                         tv2.setText("Scan stopped");
+                        mBluetoothLeService.connect(device.getAddress());
                     }
                 }
             };
@@ -279,6 +362,14 @@ public class testConnection extends AppCompatActivity
         super.onPause();
         scanLeDevice(false);
         mLeDevices.clear();
+        unregisterReceiver(mGattUpdateReceiver);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unbindService(mServiceConnection);
+        mBluetoothLeService = null;
     }
 
     public void btnCallback(View view) {
@@ -286,9 +377,11 @@ public class testConnection extends AppCompatActivity
         {
             case R.id.bt_BLE_connect:
                 Toast.makeText(view.getContext(),"btn BLE connect pressed",Toast.LENGTH_SHORT).show();
+                mBluetoothAdapter.startLeScan(mLeScanCallback);
                 break;
             case R.id.bt_drone_connect:
                 Toast.makeText(view.getContext(),"bt drone connect pressed",Toast.LENGTH_SHORT).show();
+                mBluetoothLeService.disconnect();
                 break;
             case R.id.fab:
                 Context context= getApplicationContext();
@@ -300,5 +393,13 @@ public class testConnection extends AppCompatActivity
             default:
                 break;
         }
+    }
+    private static IntentFilter makeGattUpdateIntentFilter(){
+        final IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
+        intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
+        return intentFilter;
     }
 }
